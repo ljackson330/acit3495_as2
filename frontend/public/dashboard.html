@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1>Welcome to the Dashboard</h1>
+  <div id="userInfo"></div>
+  <button id="logoutBtn">Logout</button>
+
+  <script>
+    // Function to decode the JWT token
+    function decodeJwt(token) {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded;
+    }
+
+    // Check if the token exists in localStorage
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      // If no token, redirect to login page
+      window.location.href = "/index.html";
+    } else {
+      // Decode the token and extract the user's name
+      const decodedToken = decodeJwt(token);
+      const username = decodedToken.sub; // Assuming the user's name is stored in the 'sub' field
+
+      // Display the user's name
+      document.getElementById("userInfo").innerText = `Hello, ${username}`;
+
+      // Logout functionality
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        // Remove token from localStorage and redirect to login page
+        localStorage.removeItem("token");
+        window.location.href = "/index.html";
+      });
+    }
+  </script>
+</body>
+</html>
