@@ -1,17 +1,18 @@
+import os
 import mysql.connector
 import time
 from pymongo import MongoClient, errors
 import numpy as np
 from mysql.connector import Error
 
-# MySQL configuration
-MYSQL_HOST = "mariadb"
-MYSQL_DB = "app_db"
-MYSQL_USER = "root"
-MYSQL_PASSWORD = "rootpassword"
+# MySQL configuration from environment variables
+MYSQL_HOST = os.getenv("MYSQL_HOST", "mariadb")
+MYSQL_DB = os.getenv("MYSQL_DB", "app_db")
+MYSQL_USER = os.getenv("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "rootpassword")
 
-# MongoDB configuration
-MONGO_URI = "mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin&authMechanism=SCRAM-SHA-1"
+# MongoDB configuration from environment variables
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin&authMechanism=SCRAM-SHA-1")
 MONGO_COLLECTION = "float_statistics"
 
 

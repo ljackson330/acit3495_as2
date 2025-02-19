@@ -28,8 +28,8 @@ services:
   mariadb:
     image: mariadb:latest
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword  # Set the root password for MariaDB
-      MYSQL_DATABASE: app_db  # Specify the database name
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "3306:3306"
     networks:
@@ -45,9 +45,9 @@ services:
     ports:
       - "27017:27017"  # Expose the default MongoDB port
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root  # Set the root username
-      - MONGO_INITDB_ROOT_PASSWORD=rootpassword  # Set the root password
-      - MONGO_INITDB_DATABASE=app_db  # Specify the database name
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
     networks:
       - app-network
     volumes:
@@ -84,9 +84,9 @@ services:
       - PYTHONUNBUFFERED=1
       - MYSQL_HOST=mariadb
       - MYSQL_DB=app_db
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=rootpassword
-      - MONGO_URI=mongodb://root:rootpassword@mongodb:27017/app_db  # MongoDB URI
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MONGO_URI=${MONGO_URI}
     command: [ "python", "analytics_service.py" ]  # Command to run the service
 
 networks:

@@ -1,3 +1,4 @@
+import os
 import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -17,12 +18,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database configuration (change these values based on your setup)
-DB_HOST = "mariadb"
-DB_PORT = 3306
-DB_USER = "root"
-DB_PASSWORD = "rootpassword"
-DB_NAME = "app_db"
+# Get DB config from environment variables
+DB_HOST = os.getenv("DB_HOST", "mariadb")
+DB_PORT = os.getenv("DB_PORT", 3306)
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "rootpassword")
+DB_NAME = os.getenv("DB_NAME", "app_db")
 
 # Pydantic model to accept the float value
 class FloatValue(BaseModel):
