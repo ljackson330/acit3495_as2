@@ -50,6 +50,7 @@ def get_mongo_connection(retries=10, delay=10):
                 raise Exception(f"MongoDB connection failed after {retries} attempts: {str(e)}")
             time.sleep(delay)  # Wait before retrying (increased delay)
 
+
 def get_mysql_data():
     """Fetch data from the MySQL database."""
     connection = get_mysql_connection()  # Ensure we get a valid connection
@@ -86,23 +87,27 @@ def insert_to_mongodb(stats):
     db = client['analytics']
     collection = db[MONGO_COLLECTION]
 
-    # Replace the existing document
-    collection.replace_one({"type": "descriptive_statistics"}, stats, upsert=True)
-    print("Statistics inserted into MongoDB.")
+    # Replace the existing document with the type "descriptive_statistics", ensuring it's only one document
+    collection.replace_one(
+        {"type": "descriptive_statistics"},  # Find document by the type
+        {"type": "descriptive_statistics", **stats},  # Replace it with the new stats, keeping the same type field
+        upsert=True  # If no document exists, insert it; if one exists, replace it
+    )
 
 
 def main():
-    # Fetch data from MySQL
-    values = get_mysql_data()
-    if values:
-        # Compute statistics
-        stats = compute_statistics(values)
-        print(f"Computed stats: {stats}")
+    while True:
+        # Fetch data from MySQL
+        values = get_mysql_data()
+        if values:
+            # Compute statistics
+            stats = compute_statistics(values)
 
-        # Insert stats into MongoDB
-        insert_to_mongodb(stats)
-    else:
-        print("No data to process.")
+            # Insert stats into MongoDB (overwrite)
+            insert_to_mongodb(stats)
+
+        # Wait for 5 seconds before running again
+        time.sleep(5)
 
 
 if __name__ == "__main__":

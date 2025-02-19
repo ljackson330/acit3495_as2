@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import mysql.connector
 from mysql.connector import Error
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo import MongoClient
 
 # Initialize the FastAPI app
 app = FastAPI()
@@ -95,7 +96,36 @@ async def options_insert_float():
         },
     )
 
+MONGO_URI = "mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin&authMechanism=SCRAM-SHA-1"
+MONGO_DB = "analytics"
+MONGO_COLLECTION = "float_statistics"
 
+# Function to get MongoDB connection
+def get_mongo_connection():
+    client = MongoClient(MONGO_URI)
+    db = client[MONGO_DB]
+    collection = db[MONGO_COLLECTION]
+    return collection
+
+
+# Endpoint to get the statistics from MongoDB
+@app.get("/get-stats/")
+async def get_stats():
+    collection = get_mongo_connection()
+
+    # Fetch the document that contains the statistics
+    stats = collection.find_one({"type": "descriptive_statistics"})
+
+    if not stats:
+        raise HTTPException(status_code=404, detail="Statistics not found.")
+
+    # Return the statistics
+    return {
+        "min": stats.get("min"),
+        "max": stats.get("max"),
+        "mean": stats.get("mean"),
+        "median": stats.get("median")
+    }
 
 # To check if the service is running
 @app.get("/")

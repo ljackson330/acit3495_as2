@@ -17,6 +17,10 @@
     <div id="floatMessage"></div>
   </div>
 
+  <button id="calcStatsBtn">Calculate Statistics</button>
+  <div id="statsMessage"></div>
+
+
   <button id="logoutBtn">Logout</button>
 
   <script>
@@ -78,6 +82,27 @@
         }
       });
     }
+    document.getElementById("calcStatsBtn").addEventListener("click", async () => {
+    try {
+        const response = await fetch("http://localhost:8002/get-stats/", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            document.getElementById("statsMessage").innerText = `Statistics:
+                Min: ${data.min}, Max: ${data.max}, Mean: ${data.mean}, Median: ${data.median}`;
+        } else {
+            document.getElementById("statsMessage").innerText = `Error: ${data.detail}`;
+        }
+    } catch (error) {
+        document.getElementById("statsMessage").innerText = `Error: ${error.message}`;
+    }
+});
   </script>
 </body>
 </html>
