@@ -46,6 +46,35 @@ app.get("/protected", async (req, res) => {
   }
 });
 
+// Function to delay execution for a certain amount of time
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Directly sending a test POST request to the backend after a delay
+const sendTestRequest = async () => {
+  const floatValue = 3.14; // The float value you want to send
+
+  try {
+    // Wait for 10 seconds before sending the request
+    await delay(10000);
+
+    const response = await axios.post("http://backend:8002/insert-float/", {
+      value: floatValue,
+    }, {
+      headers: {
+        "Content-Type": "application/json",  // Ensure the correct content type
+        // You can add any other headers here if needed, like Authorization
+      }
+    });
+
+    console.log("Backend response:", response.data);
+  } catch (error) {
+    console.error("Error sending request:", error.message);
+  }
+};
+
+// Call the function to send the request
+sendTestRequest();
+
 // Start the server
 app.listen(port, () => {
   console.log(`Frontend server running at http://localhost:${port}`);

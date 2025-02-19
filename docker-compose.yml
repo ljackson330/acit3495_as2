@@ -5,6 +5,7 @@ services:
       - "3000:3000"
     depends_on:
       - auth-service
+      - mariadb  # Add dependency on mariadb
     networks:
       - app-network
     volumes:
@@ -23,6 +24,35 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
 
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # Set the root password for MariaDB
+      MYSQL_DATABASE: app_db  # Specify the database name
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+    volumes:
+      - mariadb-data:/var/lib/mysql  # Persist database data
+
+  backend:
+    build: ./backend
+    ports:
+      - "8002:8002"
+    depends_on:
+      - auth-service
+      - mariadb
+    networks:
+      - app-network
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  mariadb-data:
