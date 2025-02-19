@@ -1,0 +1,28 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+    networks:
+      - app-network
+    volumes:
+      - ./frontend:/usr/src/app  # Map local frontend directory to container
+    environment:
+      - NODE_ENV=development
+
+  auth-service:
+    build: ./auth_service
+    ports:
+      - "8001:8001"
+    networks:
+      - app-network
+    volumes:
+      - ./auth_service:/usr/src/app  # Map local auth_service directory to container
+    environment:
+      - PYTHONUNBUFFERED=1
+
+networks:
+  app-network:
+    driver: bridge

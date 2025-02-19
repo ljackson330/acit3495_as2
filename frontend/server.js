@@ -12,11 +12,11 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Route to handle login and get the JWT token
 app.post("/login", async (req, res) => {
+  console.log("Sending login request to auth-service");
   const { username, password } = req.body;
-
   try {
     // Send a request to the Python authentication service to get the token
-    const response = await axios.post("http://localhost:8001/login", {
+    const response = await axios.post("http://auth-service:8001/login", {
       username,
       password,
     });
@@ -35,7 +35,7 @@ app.get("/protected", async (req, res) => {
 
   try {
     // Send a request to the Python service with the token to access protected route
-    const response = await axios.get("http://localhost:8001/protected", {
+    const response = await axios.get("http://auth-service:8001/protected", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
