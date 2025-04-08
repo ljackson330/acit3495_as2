@@ -3,23 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Analytics Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      margin-bottom: 20px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .stats-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .stat-card {
+      background-color: #f5f5f5;
+      border-radius: 5px;
+      padding: 15px;
+      min-width: 120px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    .stat-label {
+      color: #777;
+      margin-top: 5px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #logoutBtn {
+      background-color: #f44336;
+    }
+    #logoutBtn:hover {
+      background-color: #d32f2f;
+    }
+    input {
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .message {
+      margin-top: 10px;
+      color: #4CAF50;
+    }
+    .error {
+      color: #f44336;
+    }
+    .loading {
+      display: inline-block;
+      margin-left: 10px;
+      color: #777;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to the Dashboard</h1>
-  <div id="userInfo"></div>
+  <h1>Analytics Dashboard</h1>
+  <div id="userInfo" class="container"></div>
 
-  <!-- Add a section for entering the float value -->
-  <div>
+  <!-- Float value entry section -->
+  <div class="container">
     <h2>Enter a Float Value</h2>
     <input type="number" id="floatValue" step="any" placeholder="Enter a float" required>
     <button id="submitFloatBtn">Submit</button>
-    <div id="floatMessage"></div>
+    <div id="floatMessage" class="message"></div>
   </div>
 
-  <button id="calcStatsBtn">Calculate Statistics</button>
-  <div id="statsMessage"></div>
+  <!-- Analytics section -->
+  <div class="container">
+    <h2>Data Analytics</h2>
+    <button id="runAnalyticsBtn">Run Analytics</button>
+    <span id="loadingIndicator" class="loading" style="display: none;">Running analysis...</span>
 
+    <div class="stats-container" id="statsDisplay">
+      <div class="stat-card">
+        <div class="stat-value" id="minValue">-</div>
+        <div class="stat-label">Minimum</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="maxValue">-</div>
+        <div class="stat-label">Maximum</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="meanValue">-</div>
+        <div class="stat-label">Mean</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="medianValue">-</div>
+        <div class="stat-label">Median</div>
+      </div>
+    </div>
+    <div id="statsMessage" class="message"></div>
+  </div>
 
   <button id="logoutBtn">Logout</button>
 
@@ -30,6 +125,22 @@
       const decoded = JSON.parse(atob(payload));
       return decoded;
     }
+
+    // Format number to 2 decimal places
+    function formatNumber(num) {
+      return typeof num === 'number' ? num.toFixed(2) : '-';
+    }
+
+    // Update stats display
+    function updateStatsDisplay(stats) {
+      document.getElementById('minValue').textContent = formatNumber(stats.min);
+      document.getElementById('maxValue').textContent = formatNumber(stats.max);
+      document.getElementById('meanValue').textContent = formatNumber(stats.mean);
+      document.getElementById('medianValue').textContent = formatNumber(stats.median);
+    }
+
+    // API base URL - adjust if needed
+    const API_BASE_URL = 'http://localhost:8002';
 
     // Check if the token exists in localStorage
     const token = localStorage.getItem("token");
@@ -43,7 +154,7 @@
       const username = decodedToken.sub; // Assuming the user's name is stored in the 'sub' field
 
       // Display the user's name
-      document.getElementById("userInfo").innerText = `Hello, ${username}`;
+      document.getElementById("userInfo").innerHTML = `<h2>Hello, ${username}</h2>`;
 
       // Logout functionality
       document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -55,13 +166,16 @@
       // Add functionality to submit the float value to the backend
       document.getElementById("submitFloatBtn").addEventListener("click", async () => {
         const floatValue = parseFloat(document.getElementById("floatValue").value);
+        const messageElement = document.getElementById("floatMessage");
+
         if (isNaN(floatValue)) {
-          document.getElementById("floatMessage").innerText = "Please enter a valid float.";
+          messageElement.innerText = "Please enter a valid float.";
+          messageElement.className = "message error";
           return;
         }
 
         try {
-          const response = await fetch("http://localhost:8002/insert-float/", {
+          const response = await fetch(`${API_BASE_URL}/insert-float/`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -73,36 +187,76 @@
           const data = await response.json();
 
           if (response.ok) {
-            document.getElementById("floatMessage").innerText = `Value ${data.value} inserted successfully!`;
+            messageElement.innerText = `Value ${data.value} inserted successfully!`;
+            messageElement.className = "message";
+            // Clear the input field
+            document.getElementById("floatValue").value = "";
           } else {
-            document.getElementById("floatMessage").innerText = `Error: ${data.detail}`;
+            messageElement.innerText = `Error: ${data.detail || 'Something went wrong'}`;
+            messageElement.className = "message error";
           }
         } catch (error) {
-          document.getElementById("floatMessage").innerText = `Error: ${error.message}`;
+          messageElement.innerText = `Error: ${error.message}`;
+          messageElement.className = "message error";
         }
       });
-    }
-    document.getElementById("calcStatsBtn").addEventListener("click", async () => {
-    try {
-        const response = await fetch("http://localhost:8002/get-stats/", {
+
+      // Add functionality to run analytics on demand
+      document.getElementById("runAnalyticsBtn").addEventListener("click", async () => {
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        const messageElement = document.getElementById("statsMessage");
+
+        try {
+          loadingIndicator.style.display = "inline-block";
+          messageElement.innerText = "";
+
+          const response = await fetch(`http://localhost:8003/run-analytics/`, {
             method: "GET",
             headers: {
-                "Authorization": `Bearer ${token}`
+              "Authorization": `Bearer ${token}`
             }
-        });
+          });
 
-        const data = await response.json();
+          const data = await response.json();
 
-        if (response.ok) {
-            document.getElementById("statsMessage").innerText = `Statistics:
-                Min: ${data.min}, Max: ${data.max}, Mean: ${data.mean}, Median: ${data.median}`;
-        } else {
-            document.getElementById("statsMessage").innerText = `Error: ${data.detail}`;
+          if (response.ok) {
+            updateStatsDisplay(data);
+            messageElement.innerText = "Analytics completed successfully!";
+            messageElement.className = "message";
+          } else {
+            messageElement.innerText = `Error: ${data.detail || 'Something went wrong'}`;
+            messageElement.className = "message error";
+          }
+        } catch (error) {
+          messageElement.innerText = `Error: ${error.message}`;
+          messageElement.className = "message error";
+        } finally {
+          loadingIndicator.style.display = "none";
         }
-    } catch (error) {
-        document.getElementById("statsMessage").innerText = `Error: ${error.message}`;
+      });
+
+      // Load existing stats when the page loads
+      async function loadExistingStats() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/get-stats/`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            updateStatsDisplay(data);
+          }
+        } catch (error) {
+          console.error("Error loading stats:", error);
+        }
+      }
+
+      // Load stats when page loads
+      loadExistingStats();
     }
-});
   </script>
 </body>
 </html>

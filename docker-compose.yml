@@ -6,11 +6,11 @@ services:
     depends_on:
       - auth-service
       - mariadb
-      - mongodb  # Add dependency on MongoDB
+      - mongodb
     networks:
       - app-network
     volumes:
-      - ./frontend:/usr/src/app  # Map local frontend directory to container
+      - ./frontend:/usr/src/app
     environment:
       - NODE_ENV=development
 
@@ -21,9 +21,14 @@ services:
     networks:
       - app-network
     volumes:
-      - ./auth_service:/usr/src/app  # Map local auth_service directory to container
+      - ./auth_service:/usr/src/app
     environment:
-      - PYTHONUNBUFFERED=1
+        TEST_USER_NAME: ${TEST_USER_NAME}
+        TEST_USER_PASSWORD: ${TEST_USER_PASSWORD}
+        PYTHONUNBUFFERED: 1
+        SECRET_KEY: ${SECRET_KEY}
+
+
 
   mariadb:
     image: mariadb:latest
@@ -35,15 +40,15 @@ services:
     networks:
       - app-network
     volumes:
-      - mariadb-data:/var/lib/mysql  # Persist database data
+      - mariadb-data:/var/lib/mysql
 
-  mongodb:  # New MongoDB service
-    image: mongo:latest  # Using the official MongoDB image
+  mongodb:
+    image: mongo:latest
     container_name: mongodb
     command:
       - --auth
     ports:
-      - "27017:27017"  # Expose the default MongoDB port
+      - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
@@ -51,7 +56,7 @@ services:
     networks:
       - app-network
     volumes:
-      - mongodb-data:/data/db  # Persist MongoDB data
+      - mongodb-data:/data/db
 
   backend:
     build: ./backend
@@ -60,22 +65,28 @@ services:
     depends_on:
       - auth-service
       - mariadb
-      - mongodb  # Add dependency on MongoDB
+      - mongodb
     networks:
       - app-network
     volumes:
       - ./backend:/usr/src/app
     environment:
       - PYTHONUNBUFFERED=1
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - MONGO_URI=${MONGO_URI}
 
 
-  analytics-service: # New analytics service
+  analytics-service:
     build: ./analytics_service
     ports:
       - "8003:8003"
     depends_on:
       - mariadb
-      - mongodb  # Ensure MongoDB is available
+      - mongodb
     networks:
       - app-network
     volumes:
@@ -87,7 +98,7 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MONGO_URI=${MONGO_URI}
-    command: [ "python", "analytics_service.py" ]  # Command to run the service
+    command: [ "python", "analytics_service.py" ]
 
 networks:
   app-network:
@@ -95,4 +106,4 @@ networks:
 
 volumes:
   mariadb-data:
-  mongodb-data:  # Volume for MongoDB data
+  mongodb-data:

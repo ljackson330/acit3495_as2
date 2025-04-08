@@ -5,7 +5,6 @@ from pydantic import BaseModel
 import mysql.connector
 from mysql.connector import Error
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import MongoClient
 
 # Initialize the FastAPI app
 app = FastAPI()
@@ -19,11 +18,11 @@ app.add_middleware(
 )
 
 # Get DB config from environment variables
-DB_HOST = os.getenv("DB_HOST", "mariadb")
-DB_PORT = os.getenv("DB_PORT", 3306)
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "rootpassword")
-DB_NAME = os.getenv("DB_NAME", "app_db")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
 
 # Pydantic model to accept the float value
 class FloatValue(BaseModel):
@@ -97,7 +96,8 @@ async def options_insert_float():
         },
     )
 
-MONGO_URI = "mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin&authMechanism=SCRAM-SHA-1"
+from pymongo import MongoClient
+MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB = "analytics"
 MONGO_COLLECTION = "float_statistics"
 

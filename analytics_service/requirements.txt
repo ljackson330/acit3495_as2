@@ -1,3 +1,5 @@
 mysql-connector-python
 pymongo
 numpy
+fastapi
+uvicorn

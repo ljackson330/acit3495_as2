@@ -1,18 +1,33 @@
 import os
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
-import time
 from pymongo import MongoClient, errors
 import numpy as np
 from mysql.connector import Error
+from typing import Dict, List, Optional
+from pydantic import BaseModel
+
+# Create FastAPI app
+app = FastAPI(title="Analytics API")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # MySQL configuration from environment variables
-MYSQL_HOST = os.getenv("MYSQL_HOST", "mariadb")
-MYSQL_DB = os.getenv("MYSQL_DB", "app_db")
-MYSQL_USER = os.getenv("MYSQL_USER", "root")
-MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "rootpassword")
+MYSQL_HOST = os.getenv("MYSQL_HOST")
+MYSQL_DB = os.getenv("MYSQL_DB")
+MYSQL_USER = os.getenv("MYSQL_USER")
+MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 
 # MongoDB configuration from environment variables
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://root:rootpassword@mongodb:27017/admin?authSource=admin&authMechanism=SCRAM-SHA-1")
+MONGO_URI = os.getenv("MONGO_URI")
 MONGO_COLLECTION = "float_statistics"
 
 
@@ -33,7 +48,11 @@ def get_mysql_connection(retries=5, delay=5):
             attempt += 1
             print(f"MySQL connection attempt {attempt} failed: {str(e)}")
             if attempt >= retries:
-                raise Exception(f"MySQL connection failed after {retries} attempts: {str(e)}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"MySQL connection failed after {retries} attempts: {str(e)}"
+                )
+            import time
             time.sleep(delay)  # Wait before retrying
 
 
@@ -48,8 +67,12 @@ def get_mongo_connection(retries=10, delay=10):
             attempt += 1
             print(f"MongoDB connection attempt {attempt} failed: {str(e)}")
             if attempt >= retries:
-                raise Exception(f"MongoDB connection failed after {retries} attempts: {str(e)}")
-            time.sleep(delay)  # Wait before retrying (increased delay)
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"MongoDB connection failed after {retries} attempts: {str(e)}"
+                )
+            import time
+            time.sleep(delay)  # Wait before retrying
 
 
 def get_mysql_data():
@@ -62,7 +85,10 @@ def get_mysql_data():
         return [row[0] for row in result]  # Return only the float values
     except mysql.connector.Error as err:
         print(f"Error: {err}")
-        return []
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(err)}"
+        )
     finally:
         if connection:
             connection.close()
@@ -74,10 +100,10 @@ def compute_statistics(values):
         return {"min": None, "max": None, "mean": None, "median": None}
 
     stats = {
-        "min": np.min(values),
-        "max": np.max(values),
-        "mean": np.mean(values),
-        "median": np.median(values),
+        "min": float(np.min(values)),
+        "max": float(np.max(values)),
+        "mean": float(np.mean(values)),
+        "median": float(np.median(values)),
     }
     return stats
 
@@ -85,31 +111,106 @@ def compute_statistics(values):
 def insert_to_mongodb(stats):
     """Insert statistics into MongoDB."""
     client = get_mongo_connection()  # Ensure MongoDB connection is valid
-    db = client['analytics']
-    collection = db[MONGO_COLLECTION]
+    try:
+        db = client['analytics']
+        collection = db[MONGO_COLLECTION]
 
-    # Replace the existing document with the type "descriptive_statistics", ensuring it's only one document
-    collection.replace_one(
-        {"type": "descriptive_statistics"},  # Find document by the type
-        {"type": "descriptive_statistics", **stats},  # Replace it with the new stats, keeping the same type field
-        upsert=True  # If no document exists, insert it; if one exists, replace it
-    )
+        # Replace the existing document with the type "descriptive_statistics", ensuring it's only one document
+        collection.replace_one(
+            {"type": "descriptive_statistics"},  # Find document by the type
+            {"type": "descriptive_statistics", **stats},  # Replace it with the new stats, keeping the same type field
+            upsert=True  # If no document exists, insert it; if one exists, replace it
+        )
+        return True
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"MongoDB error: {str(e)}"
+        )
+    finally:
+        client.close()
 
 
-def main():
-    while True:
-        # Fetch data from MySQL
-        values = get_mysql_data()
-        if values:
-            # Compute statistics
-            stats = compute_statistics(values)
+def get_from_mongodb():
+    """Get the latest statistics from MongoDB."""
+    client = get_mongo_connection()
+    try:
+        db = client['analytics']
+        collection = db[MONGO_COLLECTION]
+        stats = collection.find_one({"type": "descriptive_statistics"})
+        if stats:
+            # Remove MongoDB _id and type fields
+            stats.pop('_id', None)
+            stats.pop('type', None)
+            return stats
+        else:
+            return None
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"MongoDB error: {str(e)}"
+        )
+    finally:
+        client.close()
 
-            # Insert stats into MongoDB (overwrite)
-            insert_to_mongodb(stats)
 
-        # Wait for 5 seconds before running again
-        time.sleep(5)
+class FloatValue(BaseModel):
+    value: float
+
+
+@app.post("/insert-float/")
+async def insert_float(float_data: FloatValue):
+    """API endpoint to insert a float value into the MySQL database."""
+    connection = get_mysql_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO float_values (value) VALUES (%s)", (float_data.value,))
+        connection.commit()
+        return {"value": float_data.value, "status": "success"}
+    except mysql.connector.Error as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(err)}"
+        )
+    finally:
+        if connection:
+            connection.close()
+
+
+@app.get("/run-analytics/")
+async def run_analytics():
+    """API endpoint to run analytics on demand and return the results."""
+    # Fetch data from MySQL
+    values = get_mysql_data()
+
+    if not values:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No data found in the database"
+        )
+
+    # Compute statistics
+    stats = compute_statistics(values)
+
+    # Insert stats into MongoDB
+    insert_to_mongodb(stats)
+
+    # Return the computed statistics
+    return stats
+
+
+@app.get("/get-stats/")
+async def get_stats():
+    """API endpoint to get the latest statistics from MongoDB."""
+    stats = get_from_mongodb()
+    if stats:
+        return stats
+    else:
+        # If no stats exist yet, run analytics on demand
+        return await run_analytics()
 
 
 if __name__ == "__main__":
-    main()
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8003)

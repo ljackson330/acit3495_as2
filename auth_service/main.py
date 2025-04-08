@@ -6,14 +6,14 @@ from passlib.context import CryptContext
 import jwt
 import datetime
 
-SECRET_KEY = os.getenv("SECRET_KEY", "acit3495")  # Fetch the secret key from the environment
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 app = FastAPI()
 
 # CORS middleware to allow requests from the frontend container
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You may want to replace "*" with a more specific URL in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,6 +45,19 @@ def create_jwt_token(username: str) -> str:
     payload = {"sub": username, "exp": expiration}
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
+# Load test user from environment
+test_username = os.getenv("TEST_USER_NAME")
+test_password = os.getenv("TEST_USER_PASSWORD")
+
+if test_username and test_password:
+    if test_username not in users_db:
+        users_db[test_username] = hash_password(test_password)
+        print(f"Test user '{test_username}' created at startup.")
+    else:
+        print(f"Test user '{test_username}' already exists.")
+else:
+    print("TEST_USER_NAME and/or TEST_USER_PASSWORD not set. Skipping test user creation.")
+
 # Register user
 @app.post("/register")
 def register(user: User):
@@ -63,23 +76,8 @@ def login(user: User):
     if not stored_password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    print(f"Stored password hash for {user.username}: {stored_password}")
-
     if not verify_password(user.password, stored_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_jwt_token(user.username)
     return {"access_token": token, "token_type": "bearer"}
-
-
-# Protected route example
-@app.get("/protected")
-def protected(token: str):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        username = payload["sub"]
-        return {"message": f"Hello, {username}! This is a protected route."}
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
