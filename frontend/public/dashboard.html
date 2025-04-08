@@ -175,7 +175,7 @@
         }
 
         try {
-          const response = await fetch(`${API_BASE_URL}/insert-float/`, {
+          const response = await fetch(`http://backend:8002/insert-float/`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -210,7 +210,7 @@
           loadingIndicator.style.display = "inline-block";
           messageElement.innerText = "";
 
-          const response = await fetch(`http://localhost:8003/run-analytics/`, {
+          const response = await fetch(`http://analytics:8003/run-analytics/`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`
@@ -238,7 +238,7 @@
       // Load existing stats when the page loads
       async function loadExistingStats() {
         try {
-          const response = await fetch(`${API_BASE_URL}/get-stats/`, {
+          const response = await fetch(`http://backend:8002/get-stats/`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`
