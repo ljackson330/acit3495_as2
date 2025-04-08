@@ -164,95 +164,94 @@
       });
 
       // Add functionality to submit the float value to the backend
-      document.getElementById("submitFloatBtn").addEventListener("click", async () => {
-        const floatValue = parseFloat(document.getElementById("floatValue").value);
-        const messageElement = document.getElementById("floatMessage");
+document.getElementById("submitFloatBtn").addEventListener("click", async () => {
+  const floatValue = parseFloat(document.getElementById("floatValue").value);
+  const messageElement = document.getElementById("floatMessage");
 
-        if (isNaN(floatValue)) {
-          messageElement.innerText = "Please enter a valid float.";
-          messageElement.className = "message error";
-          return;
-        }
+  if (isNaN(floatValue)) {
+    messageElement.innerText = "Please enter a valid float.";
+    messageElement.className = "message error";
+    return;
+  }
 
-        try {
-          const response = await fetch(`http://backend:8002/insert-float/`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({ value: floatValue })
-          });
+  try {
+    const response = await fetch("/api/insert-float", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ value: floatValue })
+    });
 
-          const data = await response.json();
+    const data = await response.json();
 
-          if (response.ok) {
-            messageElement.innerText = `Value ${data.value} inserted successfully!`;
-            messageElement.className = "message";
-            // Clear the input field
-            document.getElementById("floatValue").value = "";
-          } else {
-            messageElement.innerText = `Error: ${data.detail || 'Something went wrong'}`;
-            messageElement.className = "message error";
-          }
-        } catch (error) {
-          messageElement.innerText = `Error: ${error.message}`;
-          messageElement.className = "message error";
-        }
-      });
+    if (response.ok) {
+      messageElement.innerText = `Value ${data.value} inserted successfully!`;
+      messageElement.className = "message";
+      document.getElementById("floatValue").value = "";
+    } else {
+      messageElement.innerText = `Error: ${data.detail || 'Something went wrong'}`;
+      messageElement.className = "message error";
+    }
+  } catch (error) {
+    messageElement.innerText = `Error: ${error.message}`;
+    messageElement.className = "message error";
+  }
+});
 
-      // Add functionality to run analytics on demand
-      document.getElementById("runAnalyticsBtn").addEventListener("click", async () => {
-        const loadingIndicator = document.getElementById("loadingIndicator");
-        const messageElement = document.getElementById("statsMessage");
+// Add functionality to run analytics on demand
+document.getElementById("runAnalyticsBtn").addEventListener("click", async () => {
+  const loadingIndicator = document.getElementById("loadingIndicator");
+  const messageElement = document.getElementById("statsMessage");
 
-        try {
-          loadingIndicator.style.display = "inline-block";
-          messageElement.innerText = "";
+  try {
+    loadingIndicator.style.display = "inline-block";
+    messageElement.innerText = "";
 
-          const response = await fetch(`http://analytics:8003/run-analytics/`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          });
-
-          const data = await response.json();
-
-          if (response.ok) {
-            updateStatsDisplay(data);
-            messageElement.innerText = "Analytics completed successfully!";
-            messageElement.className = "message";
-          } else {
-            messageElement.innerText = `Error: ${data.detail || 'Something went wrong'}`;
-            messageElement.className = "message error";
-          }
-        } catch (error) {
-          messageElement.innerText = `Error: ${error.message}`;
-          messageElement.className = "message error";
-        } finally {
-          loadingIndicator.style.display = "none";
-        }
-      });
-
-      // Load existing stats when the page loads
-      async function loadExistingStats() {
-        try {
-          const response = await fetch(`http://backend:8002/get-stats/`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            updateStatsDisplay(data);
-          }
-        } catch (error) {
-          console.error("Error loading stats:", error);
-        }
+    const response = await fetch("/api/run-analytics", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
       }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      updateStatsDisplay(data);
+      messageElement.innerText = "Analytics completed successfully!";
+      messageElement.className = "message";
+    } else {
+      messageElement.innerText = `Error: ${data.detail || 'Something went wrong'}`;
+      messageElement.className = "message error";
+    }
+  } catch (error) {
+    messageElement.innerText = `Error: ${error.message}`;
+    messageElement.className = "message error";
+  } finally {
+    loadingIndicator.style.display = "none";
+  }
+});
+
+// Load existing stats when the page loads
+async function loadExistingStats() {
+  try {
+    const response = await fetch("/api/get-stats", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      updateStatsDisplay(data);
+    }
+  } catch (error) {
+    console.error("Error loading stats:", error);
+  }
+}
 
       // Load stats when page loads
       loadExistingStats();
