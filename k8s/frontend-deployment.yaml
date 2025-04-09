@@ -13,11 +13,11 @@ spec:
         app: frontend
     spec:
       containers:
-      - name: frontend
-        image: frontend:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: "development"
+        - name: frontend
+          image: 273354625202.dkr.ecr.us-east-2.amazonaws.com/myapp/frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "development"

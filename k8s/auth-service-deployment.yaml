@@ -13,26 +13,26 @@ spec:
         app: auth
     spec:
       containers:
-      - name: auth
-        image: auth:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8001
-        env:
-        - name: PYTHONUNBUFFERED
-          value: "1"
-        - name: SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: SECRET_KEY
-        - name: TEST_USER_NAME
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: TEST_USER_NAME
-        - name: TEST_USER_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: TEST_USER_PASSWORD
+        - name: auth
+          image: 273354625202.dkr.ecr.us-east-2.amazonaws.com/myapp/auth:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8001
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SECRET_KEY
+            - name: TEST_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: TEST_USER_NAME
+            - name: TEST_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: TEST_USER_PASSWORD
