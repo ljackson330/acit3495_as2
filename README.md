@@ -4,7 +4,7 @@ Deploy and manage the containerized web app from Project 1 using Kubernetes.
 
 ### Usage
 
-The included deploy script will handle building your Docker images, and run through applying each of the Kubernetes
+The included deploy script (local) will handle building your Docker images, and run through applying each of the Kubernetes
 configurations in ./k8s 
 
 ```
@@ -14,7 +14,16 @@ chmod +x ./deploy.sh
 
 The frontend will be available at ``http://localhost:30000/``
 
-The script expects the following environment variables:
+The included *AWS* script (`deploy-aws.sh`) is an example of a script that creates ECR (Elastic Container Registry) repositories and pushes the Docker images to them. The script builds images using `buildx` to be compatible with different platform architectures. The rest of the script remains similar to the `deploy.sh` script. 
+
+```
+chmod +x ./deploy-aws.sh
+./deploy-aws.sh
+```
+
+The frontend will be available at ``http://<frontend LoadBalancer EXTERNAL IP:30000/``
+
+Both scripts expect the following environment variables:
 
 ```
 # MariaDB Credentials
