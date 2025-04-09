@@ -3,13 +3,14 @@ kind: Service
 metadata:
   name: frontend
   annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "30000"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "HTTP"
 spec:
   selector:
     app: frontend
   ports:
-    - port: 3000
+    - port: 30000
       targetPort: 3000
-      nodePort: 30000
   type: LoadBalancer

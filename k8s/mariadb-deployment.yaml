@@ -42,4 +42,5 @@ spec:
 
       volumes:
         - name: mariadb-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mariadb-pvc

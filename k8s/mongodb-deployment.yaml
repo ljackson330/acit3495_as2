@@ -12,12 +12,6 @@ spec:
       labels:
         app: mongodb
     spec:
-      tolerations:
-        - key: "karpenter.sh/disrupted"
-          operator: "Exists"
-          effect: "NoSchedule"
-        - key: "CriticalAddonsOnly"
-          operator: "Exists"
       nodeSelector:
         kubernetes.io/arch: amd64
       containers:
@@ -47,4 +41,5 @@ spec:
               mountPath: /data/db
       volumes:
         - name: mongodb-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
