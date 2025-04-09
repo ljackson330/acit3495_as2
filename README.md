@@ -21,7 +21,7 @@ chmod +x ./deploy-aws.sh
 ./deploy-aws.sh
 ```
 
-The frontend will be available at ``http://<frontend LoadBalancer EXTERNAL IP:30000/``
+The frontend will be available at ``http://<frontend LoadBalancer EXTERNAL IP>:30000/``
 
 Both scripts expect the following environment variables:
 
