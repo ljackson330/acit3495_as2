@@ -22,10 +22,6 @@ kubectl apply -f k8s/mariadb-service.yaml -n myapp
 kubectl apply -f k8s/mongodb-deployment.yaml -n myapp
 kubectl apply -f k8s/mongodb-service.yaml -n myapp
 
-# Wait for databases to be ready
-echo "Waiting for databases to be ready..."
-sleep 30
-
 # Apply application services
 kubectl apply -f k8s/auth-service-deployment.yaml -n myapp
 kubectl apply -f k8s/auth-service-service.yaml -n myapp
