@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Build Docker images
+docker build -t analytics:latest ./analytics_service
+docker build -t auth:latest ./auth_service
+docker build -t backend:latest ./backend
+docker build -t frontend:latest ./frontend
+
 # Create namespace
 kubectl create namespace myapp
 
@@ -33,12 +39,8 @@ kubectl apply -f k8s/frontend-service.yaml -n myapp
 # Apply horizontal pod autoscalers
 kubectl apply -f k8s/backend-hpa.yaml -n myapp
 
-# Apply ingress last
-kubectl apply -f k8s/ingress.yaml -n myapp
-
 echo "Deployment completed! Checking pod status..."
 kubectl get pods -n myapp
-
 
 echo "Press any key to exit..."
 read -n 1
